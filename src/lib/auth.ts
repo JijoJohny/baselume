@@ -3,7 +3,7 @@ import { sdk } from '@farcaster/frame-sdk';
 
 const quickAuth = createClient();
 
-export async function verifyAuth(request: Request): Promise<number | null> {
+export async function verifyAuth(request: Request): Promise<{ fid: number; address: string } | null> {
     const auth = request.headers.get('authorization');
     if (!auth?.startsWith('Bearer ')) return null;
 
@@ -13,7 +13,15 @@ export async function verifyAuth(request: Request): Promise<number | null> {
             domain: (new URL(process.env.NEXT_PUBLIC_URL!)).hostname
         });
 
-        return Number(payload.sub);
+        const fid = Number(payload.sub);
+        const userInfo = await getUserInfo(fid);
+        
+        if (!userInfo?.address) return null;
+
+        return {
+            fid,
+            address: userInfo.address
+        };
     } catch (error) {
         console.error('Auth verification failed:', error);
         return null;

@@ -32,19 +32,20 @@ export function LoginScreen({ onNavigate, onConnectWallet }: LoginScreenProps) {
     : '';
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 space-y-6 bg-white">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-8 text-blue-600">baselume</h1>
+    <div className="flex flex-col items-center justify-center h-full px-6 py-8 bg-white">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-blue-600 mb-2">baselume</h1>
+        <p className="text-sm text-blue-600">Competitive Gaming Platform</p>
         
         {displayName && (
-          <p className="text-lg mb-6 text-blue-600">{displayName}</p>
+          <p className="text-sm mt-4 text-blue-600 font-medium">{displayName}</p>
         )}
       </div>
 
       <div className="w-full max-w-sm space-y-4">
         <Button 
           onClick={handleDoCompete}
-          className="w-full bg-black text-white border border-black hover:bg-gray-800"
+          className="w-full bg-black text-white hover:bg-gray-800"
         >
           DO COMPETE
         </Button>

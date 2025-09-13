@@ -60,9 +60,9 @@ export function FloatingDrawingDashboard({
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
       
-      // Keep dashboard within viewport bounds
-      const maxX = window.innerWidth - 280;
-      const maxY = window.innerHeight - 200;
+      // Keep dashboard within viewport bounds and away from bottom buttons
+      const maxX = window.innerWidth - 240;
+      const maxY = window.innerHeight - 250; // Leave space for bottom buttons
       
       setPosition({
         x: Math.max(0, Math.min(newX, maxX)),
@@ -95,23 +95,24 @@ export function FloatingDrawingDashboard({
       style={{
         left: position.x,
         top: position.y,
-        width: '280px',
+        width: '240px',
+        maxHeight: '400px',
       }}
       onMouseDown={handleMouseDown}
     >
       {/* Header */}
-      <div className="drag-handle flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-        <h3 className="text-blue-600 text-sm font-semibold">Drawing Tools</h3>
+      <div className="drag-handle flex items-center justify-between p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+        <h3 className="text-blue-600 text-xs font-semibold">Drawing Tools</h3>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-gray-500 hover:text-gray-700 text-lg"
+          className="text-gray-500 hover:text-gray-700 text-sm"
         >
           {isCollapsed ? '▼' : '▲'}
         </button>
       </div>
 
       {!isCollapsed && (
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-3 overflow-y-auto" style={{ maxHeight: '320px' }}>
           {/* Tool Selection */}
           <div>
             <h4 className="text-blue-600 text-xs font-semibold mb-2">Tools</h4>

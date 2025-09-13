@@ -28,13 +28,14 @@ import { USE_WALLET, APP_NAME } from "~/lib/constants";
 // Game screen components
 import { LoginScreen } from "./game/LoginScreen";
 import { MainMenuScreen } from "./game/MainMenuScreen";
+import { PublicRoomsScreen } from "./game/PublicRoomsScreen";
 import { PrivateRoomsScreen } from "./game/PrivateRoomsScreen";
 import { JoinRoomScreen } from "./game/JoinRoomScreen";
 import { CreateRoomScreen } from "./game/CreateRoomScreen";
 import { GameLobbyScreen } from "./game/GameLobbyScreen";
 import { GameSubmissionScreen } from "./game/GameSubmissionScreen";
 
-export type GameScreen = "login" | "main-menu" | "private-rooms" | "join-room" | "create-room" | "game-lobby" | "game-submission";
+export type GameScreen = "login" | "main-menu" | "public-rooms" | "private-rooms" | "join-room" | "create-room" | "game-lobby" | "game-submission";
 
 interface NeynarUser {
   fid: number;
@@ -47,6 +48,12 @@ interface GameState {
   participants: string[];
   gameName: string;
   isHost: boolean;
+  selectedRoom?: {
+    id: string;
+    name: string;
+    theme: string;
+    host: string;
+  };
 }
 
 export default function Demo(
@@ -60,6 +67,7 @@ export default function Demo(
     participants: [],
     gameName: "",
     isHost: false,
+    selectedRoom: undefined,
   });
   const [txHash, setTxHash] = useState<string | null>(null);
   const [sendNotificationResult, setSendNotificationResult] = useState("");
@@ -80,8 +88,16 @@ export default function Demo(
   };
 
   const handlePlayNow = () => {
-    // Direct play functionality
-    navigateToScreen("game-submission");
+    // Navigate to public rooms for match selection
+    navigateToScreen("public-rooms");
+  };
+
+  const handleRoomSelected = (roomData: { id: string; name: string; theme: string; host: string }) => {
+    setGameState(prev => ({ 
+      ...prev, 
+      selectedRoom: roomData,
+      currentScreen: "game-submission"
+    }));
   };
 
   useEffect(() => {
@@ -245,6 +261,14 @@ export default function Demo(
           />
         );
       
+      case "public-rooms":
+        return (
+          <PublicRoomsScreen
+            onNavigate={navigateToScreen}
+            onRoomSelected={handleRoomSelected}
+          />
+        );
+      
       case "private-rooms":
         return (
           <PrivateRoomsScreen
@@ -264,7 +288,11 @@ export default function Demo(
         return (
           <CreateRoomScreen
             onNavigate={navigateToScreen}
-            onBack={() => navigateToScreen("private-rooms")}
+            onBack={() => {
+              // Navigate back to the screen that brought us here
+              // Could be private-rooms or public-rooms
+              navigateToScreen("private-rooms");
+            }}
           />
         );
       
@@ -284,6 +312,8 @@ export default function Demo(
           <GameSubmissionScreen
             onNavigate={navigateToScreen}
             onBack={() => navigateToScreen("main-menu")}
+            roomTheme={gameState.selectedRoom?.theme}
+            roomName={gameState.selectedRoom?.name}
           />
         );
       
