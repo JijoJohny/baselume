@@ -6,6 +6,7 @@ import { useAccount } from "wagmi";
 import { DrawingCanvas, DrawingTool } from "./DrawingCanvas";
 import { FloatingDrawingDashboard } from "./FloatingDrawingDashboard";
 import { TextInputModal } from "./TextInputModal";
+import { useContracts } from "~/hooks/useContracts";
 
 interface GameSubmissionScreenProps {
   onNavigate: (screen: "main-menu") => void;
@@ -16,6 +17,7 @@ interface GameSubmissionScreenProps {
 
 export function GameSubmissionScreen({ onNavigate, onBack, roomTheme, roomName }: GameSubmissionScreenProps) {
   const { address } = useAccount();
+  const { recordScore, recordingScore, error: contractError } = useContracts();
   const [submission, setSubmission] = useState("dragon flying");
   const [activeTool, setActiveTool] = useState<DrawingTool>("pen");
   const [brushSize, setBrushSize] = useState(5);
@@ -50,14 +52,14 @@ export function GameSubmissionScreen({ onNavigate, onBack, roomTheme, roomName }
     setIsSubmitting(true);
     
     try {
-      // Submit the drawing (this will include AI scoring)
+      // Step 1: Submit the drawing and get AI score
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          gameId: 'temp-game-id', // TODO: Get actual game ID
+          gameId: `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique game ID
           drawingData,
           description: submission
         })
@@ -69,19 +71,39 @@ export function GameSubmissionScreen({ onNavigate, onBack, roomTheme, roomName }
 
       const result = await response.json();
       
-      // Show AI score if available
-      if (result.submission.ai_score) {
-        setAiScore({
-          score: result.submission.ai_score,
-          feedback: result.submission.ai_feedback || '',
-          criteria: result.submission.ai_criteria || {
-            accuracy: 5,
-            creativity: 5,
-            technique: 5,
-            completeness: 5
-          }
-        });
-        setShowScoreModal(true);
+      // Step 2: Record score on blockchain if AI scoring was successful
+      if (result.submission.ai_score && address) {
+        try {
+          await recordScore(result.submission.ai_score, result.submission.id);
+          
+          // Show success message with blockchain confirmation
+          setAiScore({
+            score: result.submission.ai_score,
+            feedback: (result.submission.ai_feedback || '') + ' Your score has been recorded on the blockchain!',
+            criteria: result.submission.ai_criteria || {
+              accuracy: 5,
+              creativity: 5,
+              technique: 5,
+              completeness: 5
+            }
+          });
+          setShowScoreModal(true);
+        } catch (blockchainError) {
+          console.error('Blockchain recording failed:', blockchainError);
+          
+          // Show AI score but indicate blockchain recording failed
+          setAiScore({
+            score: result.submission.ai_score,
+            feedback: (result.submission.ai_feedback || '') + ' Note: Score could not be recorded on blockchain. Please try again later.',
+            criteria: result.submission.ai_criteria || {
+              accuracy: 5,
+              creativity: 5,
+              technique: 5,
+              completeness: 5
+            }
+          });
+          setShowScoreModal(true);
+        }
       } else {
         // No AI score, navigate directly
         onNavigate("main-menu");
@@ -198,10 +220,15 @@ export function GameSubmissionScreen({ onNavigate, onBack, roomTheme, roomName }
         <div className="max-w-4xl mx-auto flex gap-3 justify-center">
           <Button 
             onClick={handleSubmit}
-            disabled={(!submission.trim() && !drawingData) || isSubmitting}
+            disabled={(!submission.trim() && !drawingData) || isSubmitting || recordingScore}
             className="bg-black text-white border border-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 text-sm font-semibold"
           >
-            {isSubmitting ? 'Analyzing Drawing...' : 'Submit Drawing'}
+            {recordingScore 
+              ? 'Recording on Blockchain...' 
+              : isSubmitting 
+                ? 'Analyzing Drawing...' 
+                : 'Submit Drawing'
+            }
           </Button>
           
           <Button 

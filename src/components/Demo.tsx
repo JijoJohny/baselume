@@ -34,8 +34,9 @@ import { JoinRoomScreen } from "./game/JoinRoomScreen";
 import { CreateRoomScreen } from "./game/CreateRoomScreen";
 import { GameLobbyScreen } from "./game/GameLobbyScreen";
 import { GameSubmissionScreen } from "./game/GameSubmissionScreen";
+import { LeaderboardScreen } from "./game/LeaderboardScreen";
 
-export type GameScreen = "login" | "main-menu" | "public-rooms" | "private-rooms" | "join-room" | "create-room" | "game-lobby" | "game-submission";
+export type GameScreen = "login" | "main-menu" | "public-rooms" | "private-rooms" | "join-room" | "create-room" | "game-lobby" | "game-submission" | "leaderboard";
 
 interface NeynarUser {
   fid: number;
@@ -314,6 +315,14 @@ export default function Demo(
             onBack={() => navigateToScreen("main-menu")}
             roomTheme={gameState.selectedRoom?.theme}
             roomName={gameState.selectedRoom?.name}
+          />
+        );
+      
+      case "leaderboard":
+        return (
+          <LeaderboardScreen
+            onNavigate={navigateToScreen}
+            onBack={() => navigateToScreen("main-menu")}
           />
         );
       

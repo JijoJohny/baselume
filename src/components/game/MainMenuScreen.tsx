@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/Button";
 import { useAccount } from "wagmi";
 
 interface MainMenuScreenProps {
-  onNavigate: (screen: "private-rooms" | "public-rooms") => void;
+  onNavigate: (screen: "private-rooms" | "public-rooms" | "leaderboard") => void;
   onPlayNow: () => void;
 }
 
@@ -49,6 +49,13 @@ export function MainMenuScreen({ onNavigate, onPlayNow }: MainMenuScreenProps) {
           className="w-full bg-white text-blue-600 hover:bg-blue-50"
         >
           PRIVATE ROOMS
+        </Button>
+        
+        <Button 
+          onClick={() => onNavigate("leaderboard")}
+          className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600 font-semibold"
+        >
+          🏆 LEADERBOARD
         </Button>
       </div>
     </div>
