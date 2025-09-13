@@ -25,19 +25,42 @@ import { Header } from "~/components/ui/Header";
 import { Footer } from "~/components/ui/Footer";
 import { USE_WALLET, APP_NAME } from "~/lib/constants";
 
-export type Tab = "home" | "actions" | "context" | "wallet";
+// Game screen components
+import { LoginScreen } from "./game/LoginScreen";
+import { MainMenuScreen } from "./game/MainMenuScreen";
+import { PrivateRoomsScreen } from "./game/PrivateRoomsScreen";
+import { JoinRoomScreen } from "./game/JoinRoomScreen";
+import { CreateRoomScreen } from "./game/CreateRoomScreen";
+import { GameLobbyScreen } from "./game/GameLobbyScreen";
+import { GameSubmissionScreen } from "./game/GameSubmissionScreen";
+
+export type GameScreen = "login" | "main-menu" | "private-rooms" | "join-room" | "create-room" | "game-lobby" | "game-submission";
 
 interface NeynarUser {
   fid: number;
   score: number;
 }
 
+interface GameState {
+  currentScreen: GameScreen;
+  roomCode: string;
+  participants: string[];
+  gameName: string;
+  isHost: boolean;
+}
+
 export default function Demo(
-  { title }: { title?: string } = { title: "Frames v2 Demo" }
+  { title }: { title?: string } = { title: "baselume" }
 ) {
   const { isSDKLoaded, context, added, notificationDetails, actions } =
     useMiniApp();
-  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const [gameState, setGameState] = useState<GameState>({
+    currentScreen: "login",
+    roomCode: "",
+    participants: [],
+    gameName: "",
+    isHost: false,
+  });
   const [txHash, setTxHash] = useState<string | null>(null);
   const [sendNotificationResult, setSendNotificationResult] = useState("");
   const [copied, setCopied] = useState(false);
@@ -45,6 +68,21 @@ export default function Demo(
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+
+  // Navigation functions
+  const navigateToScreen = (screen: GameScreen) => {
+    setGameState(prev => ({ ...prev, currentScreen: screen }));
+  };
+
+  const handleConnectWallet = () => {
+    // Wallet connection logic will be handled by individual screens
+    console.log("Connecting wallet...");
+  };
+
+  const handlePlayNow = () => {
+    // Direct play functionality
+    navigateToScreen("game-submission");
+  };
 
   useEffect(() => {
     console.log("isSDKLoaded", isSDKLoaded);
@@ -188,6 +226,77 @@ export default function Demo(
     return <div>Loading...</div>;
   }
 
+  // Render the appropriate screen based on current state
+  const renderCurrentScreen = () => {
+    switch (gameState.currentScreen) {
+      case "login":
+        return (
+          <LoginScreen
+            onNavigate={navigateToScreen}
+            onConnectWallet={handleConnectWallet}
+          />
+        );
+      
+      case "main-menu":
+        return (
+          <MainMenuScreen
+            onNavigate={navigateToScreen}
+            onPlayNow={handlePlayNow}
+          />
+        );
+      
+      case "private-rooms":
+        return (
+          <PrivateRoomsScreen
+            onNavigate={navigateToScreen}
+          />
+        );
+      
+      case "join-room":
+        return (
+          <JoinRoomScreen
+            onNavigate={navigateToScreen}
+            onBack={() => navigateToScreen("private-rooms")}
+          />
+        );
+      
+      case "create-room":
+        return (
+          <CreateRoomScreen
+            onNavigate={navigateToScreen}
+            onBack={() => navigateToScreen("private-rooms")}
+          />
+        );
+      
+      case "game-lobby":
+        return (
+          <GameLobbyScreen
+            onNavigate={navigateToScreen}
+            onBack={() => navigateToScreen("main-menu")}
+            isHost={gameState.isHost}
+            participants={gameState.participants}
+            gameName={gameState.gameName}
+          />
+        );
+      
+      case "game-submission":
+        return (
+          <GameSubmissionScreen
+            onNavigate={navigateToScreen}
+            onBack={() => navigateToScreen("main-menu")}
+          />
+        );
+      
+      default:
+        return (
+          <LoginScreen
+            onNavigate={navigateToScreen}
+            onConnectWallet={handleConnectWallet}
+          />
+        );
+    }
+  };
+
   return (
     <div
       style={{
@@ -197,198 +306,8 @@ export default function Demo(
         paddingRight: context?.client.safeAreaInsets?.right ?? 0,
       }}
     >
-      <div className="mx-auto py-2 px-4 pb-20">
-        <Header neynarUser={neynarUser} />
-
-        <h1 className="text-2xl font-bold text-center mb-4">{title}</h1>
-
-        {activeTab === "home" && (
-          <div className="flex items-center justify-center h-[calc(100vh-200px)] px-6">
-            <div className="text-center w-full max-w-md mx-auto">
-              <p className="text-lg mb-2">Put your content here!</p>
-              <p className="text-sm text-gray-500">Powered by Neynar 🪐</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "actions" && (
-          <div className="space-y-3 px-6 w-full max-w-md mx-auto">
-            <ShareButton
-              buttonText="Share Mini App"
-              cast={{
-                text: "Check out this awesome frame @1 @2 @3! 🚀🪐",
-                bestFriends: true,
-                embeds: [
-                  `${process.env.NEXT_PUBLIC_URL}/share/${
-                    context?.user?.fid || ""
-                  }`,
-                ],
-              }}
-              className="w-full"
-            />
-
-            <Button
-              onClick={() =>
-                actions.openUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-              }
-              className="w-full"
-            >
-              Open Link
-            </Button>
-
-            <Button onClick={actions.close} className="w-full">
-              Close Mini App
-            </Button>
-
-            <Button
-              onClick={actions.addMiniApp}
-              disabled={added}
-              className="w-full"
-            >
-              Add Mini App to Client
-            </Button>
-
-            {sendNotificationResult && (
-              <div className="text-sm w-full">
-                Send notification result: {sendNotificationResult}
-              </div>
-            )}
-            <Button
-              onClick={sendNotification}
-              disabled={!notificationDetails}
-              className="w-full"
-            >
-              Send notification
-            </Button>
-
-            <Button
-              onClick={async () => {
-                if (context?.user?.fid) {
-                  const shareUrl = `${process.env.NEXT_PUBLIC_URL}/share/${context.user.fid}`;
-                  await navigator.clipboard.writeText(shareUrl);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }
-              }}
-              disabled={!context?.user?.fid}
-              className="w-full"
-            >
-              {copied ? "Copied!" : "Copy share URL"}
-            </Button>
-          </div>
-        )}
-
-        {activeTab === "context" && (
-          <div className="mx-6">
-            <h2 className="text-lg font-semibold mb-2 text-foreground">
-              Context
-            </h2>
-            <div className="p-4 bg-card text-card-foreground rounded-lg border border-border">
-              <pre className="font-mono text-xs whitespace-pre-wrap break-words w-full">
-                {JSON.stringify(context, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "wallet" && USE_WALLET && (
-          <div className="space-y-3 px-6 w-full max-w-md mx-auto">
-            {address && (
-              <div className="text-xs w-full">
-                Address:{" "}
-                <pre className="inline w-full">{truncateAddress(address)}</pre>
-              </div>
-            )}
-
-            {chainId && (
-              <div className="text-xs w-full">
-                Chain ID: <pre className="inline w-full">{chainId}</pre>
-              </div>
-            )}
-
-            {isConnected ? (
-              <Button onClick={() => disconnect()} className="w-full">
-                Disconnect
-              </Button>
-            ) : context ? (
-              <Button
-                onClick={() => connect({ connector: connectors[0] })}
-                className="w-full"
-              >
-                Connect
-              </Button>
-            ) : (
-              <div className="space-y-3 w-full">
-                <Button
-                  onClick={() => connect({ connector: connectors[1] })}
-                  className="w-full"
-                >
-                  Connect Coinbase Wallet
-                </Button>
-                <Button
-                  onClick={() => connect({ connector: connectors[2] })}
-                  className="w-full"
-                >
-                  Connect MetaMask
-                </Button>
-              </div>
-            )}
-
-            <SignEvmMessage />
-
-            {isConnected && (
-              <>
-                <SendEth />
-                <Button
-                  onClick={sendTx}
-                  disabled={!isConnected || isSendTxPending}
-                  isLoading={isSendTxPending}
-                  className="w-full"
-                >
-                  Send Transaction (contract)
-                </Button>
-                {isSendTxError && renderError(sendTxError)}
-                {txHash && (
-                  <div className="text-xs w-full">
-                    <div>Hash: {truncateAddress(txHash)}</div>
-                    <div>
-                      Status:{" "}
-                      {isConfirming
-                        ? "Confirming..."
-                        : isConfirmed
-                        ? "Confirmed!"
-                        : "Pending"}
-                    </div>
-                  </div>
-                )}
-                <Button
-                  onClick={signTyped}
-                  disabled={!isConnected || isSignTypedPending}
-                  isLoading={isSignTypedPending}
-                  className="w-full"
-                >
-                  Sign Typed Data
-                </Button>
-                {isSignTypedError && renderError(signTypedError)}
-                <Button
-                  onClick={handleSwitchChain}
-                  disabled={isSwitchChainPending}
-                  isLoading={isSwitchChainPending}
-                  className="w-full"
-                >
-                  Switch to {nextChain.name}
-                </Button>
-                {isSwitchChainError && renderError(switchChainError)}
-              </>
-            )}
-          </div>
-        )}
-
-        <Footer
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          showWallet={USE_WALLET}
-        />
+      <div className="mx-auto py-2 px-4 pb-20 h-screen">
+        {renderCurrentScreen()}
       </div>
     </div>
   );
