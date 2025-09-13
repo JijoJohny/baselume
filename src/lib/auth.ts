@@ -72,7 +72,17 @@ export async function fetchWithAuth(url: string, options?: RequestInit) {
 
         return response;
     } catch (error) {
-        console.error('fetchWithAuth error:', error);
-        throw error; // Re-throw to let the caller handle it
+        console.warn('Farcaster auth failed, falling back to regular fetch:', error);
+        
+        // Fallback to regular fetch without auth
+        const fallbackHeaders = {
+            'Content-Type': 'application/json',
+            ...(options?.headers || {})
+        };
+        
+        return fetch(url, {
+            ...options,
+            headers: fallbackHeaders,
+        });
     }
 }

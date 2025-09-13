@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import { DrawingCanvas, DrawingTool } from "./DrawingCanvas";
 import { FloatingDrawingDashboard } from "./FloatingDrawingDashboard";
 import { TextInputModal } from "./TextInputModal";
-import { useContracts } from "~/hooks/useContracts";
+import { useContracts } from "~/hooks/useContractsSimple";
 
 interface GameSubmissionScreenProps {
   onNavigate: (screen: "main-menu") => void;
@@ -18,7 +18,7 @@ interface GameSubmissionScreenProps {
 export function GameSubmissionScreen({ onNavigate, onBack, roomTheme, roomName }: GameSubmissionScreenProps) {
   const { address } = useAccount();
   const { recordScore, recordingScore, error: contractError } = useContracts();
-  const [submission, setSubmission] = useState("dragon flying");
+  const [submission, setSubmission] = useState("");
   const [activeTool, setActiveTool] = useState<DrawingTool>("pen");
   const [brushSize, setBrushSize] = useState(5);
   const [brushColor, setBrushColor] = useState("#000000");

@@ -225,7 +225,7 @@ export class ContractService {
         day,
         totalGames: 0,
         totalScore: 0,
-        topPlayer: ethers.constants.AddressZero,
+        topPlayer: '0x0000000000000000000000000000000000000000',
         topScore: 0,
         nftAwarded: false,
       };
@@ -265,7 +265,7 @@ export class ContractService {
       console.error('Error getting daily champion:', error);
       return {
         day,
-        champion: ethers.constants.AddressZero,
+        champion: '0x0000000000000000000000000000000000000000',
         score: 0,
         tokenId: 0,
         nftAwarded: false,

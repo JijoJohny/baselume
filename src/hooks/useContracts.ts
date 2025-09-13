@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAccount, useProvider, useSigner } from 'wagmi';
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { ContractService, createContractService, PlayerScore, DailyChampion, DailyStats } from '~/lib/contracts';
 
@@ -44,8 +44,8 @@ export interface UseContractsReturn {
 
 export function useContracts(): UseContractsReturn {
   const { address, isConnected } = useAccount();
-  const provider = useProvider();
-  const { data: signer } = useSigner();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
   // State
   const [loading, setLoading] = useState(false);
@@ -61,9 +61,10 @@ export function useContracts(): UseContractsReturn {
 
   // Contract service instance
   const contractService = useMemo(() => {
-    if (!provider) return null;
-    return createContractService(provider, signer || undefined);
-  }, [provider, signer]);
+    if (!publicClient) return null;
+    // For now, we'll disable contract service until we properly adapt it for viem
+    return null;
+  }, [publicClient, walletClient]);
 
   // Clear error after delay
   useEffect(() => {
@@ -75,7 +76,7 @@ export function useContracts(): UseContractsReturn {
 
   // Record score on blockchain
   const recordScore = useCallback(async (score: number, gameId: string) => {
-    if (!contractService || !address || !signer) {
+    if (!contractService || !address || !walletClient) {
       throw new Error('Wallet not connected or contract not available');
     }
 
@@ -102,7 +103,7 @@ export function useContracts(): UseContractsReturn {
     } finally {
       setRecordingScore(false);
     }
-  }, [contractService, address, signer]);
+  }, [contractService, address, walletClient]);
 
   // Get total score
   const getTotalScore = useCallback(async (targetAddress?: string): Promise<number> => {
@@ -188,7 +189,7 @@ export function useContracts(): UseContractsReturn {
 
   // Mint daily champion NFT
   const mintDailyChampion = useCallback(async (day: number) => {
-    if (!contractService || !signer) {
+    if (!contractService || !walletClient) {
       throw new Error('Wallet not connected or contract not available');
     }
 
@@ -215,7 +216,7 @@ export function useContracts(): UseContractsReturn {
     } finally {
       setMintingNFT(false);
     }
-  }, [contractService, signer]);
+  }, [contractService, walletClient]);
 
   // Get daily champion
   const getDailyChampion = useCallback(async (day: number): Promise<DailyChampion> => {

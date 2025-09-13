@@ -26,36 +26,83 @@ interface PublicRoomsScreenProps {
 
 export function PublicRoomsScreen({ onNavigate, onRoomSelected }: PublicRoomsScreenProps) {
   const { address } = useAccount();
-  const { getPublicRooms, joinRoom, loading, error } = useDatabase();
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<PublicRoom[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const displayName = address 
     ? address.replace(/^0x/, '').slice(0, 8) + '.base.eth' 
     : '';
 
-  // Load public rooms on component mount
+  // Hardcoded test rooms for easy testing - no database calls
   useEffect(() => {
-    const loadRooms = async () => {
-      try {
-        const rooms = await getPublicRooms();
-        setAvailableRooms(rooms);
-      } catch (err) {
-        console.error('Failed to load public rooms:', err);
-      }
-    };
+    const mockRooms: PublicRoom[] = [
+      {
+        id: 'room-1',
+        name: 'Fantasy Art Battle',
+        host_address: '0x123...abc',
+        theme: 'Fantasy',
+        max_players: 6,
+        status: 'waiting',
+        is_public: true,
+        time_limit: 300,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        participant_count: 3,
+      },
+      {
+        id: 'room-2',
+        name: 'Animal Kingdom',
+        host_address: '0x456...def',
+        theme: 'Animals',
+        max_players: 4,
+        status: 'waiting',
+        is_public: true,
+        time_limit: 180,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        participant_count: 1,
+      },
+      {
+        id: 'room-3',
+        name: 'Space Adventure',
+        host_address: '0x789...ghi',
+        theme: 'Space',
+        max_players: 8,
+        status: 'waiting',
+        is_public: true,
+        time_limit: 240,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        participant_count: 5,
+      },
+      {
+        id: 'room-4',
+        name: 'Food Art Challenge',
+        host_address: '0xabc...123',
+        theme: 'Food',
+        max_players: 5,
+        status: 'waiting',
+        is_public: true,
+        time_limit: 120,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        participant_count: 2,
+      },
+    ];
+    
+    setAvailableRooms(mockRooms);
+  }, []);
 
-    loadRooms();
-  }, [getPublicRooms]);
-
-  const handleJoinRoom = async (roomId: string) => {
+  const handleJoinRoom = (roomId: string) => {
     setSelectedRoom(roomId);
+    setLoading(true);
+    
+    // Find the room
     const room = availableRooms.find(r => r.id === roomId);
     if (room) {
-      try {
-        // Join the room first
-        await joinRoom(room.code);
-        
+      // Simulate a brief loading state for better UX
+      setTimeout(() => {
         // Pass room data and navigate directly to the drawing/competition page
         onRoomSelected({
           id: room.id,
@@ -63,10 +110,12 @@ export function PublicRoomsScreen({ onNavigate, onRoomSelected }: PublicRoomsScr
           theme: room.theme || "General",
           host: room.host_address
         });
-      } catch (err) {
-        console.error('Failed to join room:', err);
+        setLoading(false);
         setSelectedRoom(null);
-      }
+      }, 500); // Half second delay for smooth transition
+    } else {
+      setLoading(false);
+      setSelectedRoom(null);
     }
   };
 
@@ -108,11 +157,6 @@ export function PublicRoomsScreen({ onNavigate, onRoomSelected }: PublicRoomsScr
       <div className="flex-shrink-0 px-6 py-4 bg-blue-50 border-b border-blue-200">
         <h2 className="text-xl font-bold text-blue-600">Available Matches</h2>
         <p className="text-sm text-blue-600 mt-1">Choose a room to join and start competing</p>
-        {error && (
-          <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-600 text-sm">
-            {error}
-          </div>
-        )}
       </div>
 
       {/* Rooms List */}
@@ -167,21 +211,10 @@ export function PublicRoomsScreen({ onNavigate, onRoomSelected }: PublicRoomsScr
                       e.stopPropagation();
                       handleJoinRoom(room.id);
                     }}
-                    disabled={room.status === "in_progress" || (room.participant_count || 0) >= room.max_players || loading}
-                    className={`px-6 py-2 ${
-                      room.status === "in_progress" || (room.participant_count || 0) >= room.max_players
-                        ? 'bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed'
-                        : 'bg-black text-white border border-black hover:bg-gray-800'
-                    }`}
+                    disabled={loading && selectedRoom === room.id}
+                    className="px-6 py-2 bg-black text-white border border-black hover:bg-gray-800 disabled:opacity-50"
                   >
-                    {loading && selectedRoom === room.id
-                      ? "Joining..."
-                      : room.status === "in_progress" 
-                        ? "In Progress" 
-                        : (room.participant_count || 0) >= room.max_players 
-                          ? "Full" 
-                          : "Join"
-                    }
+                    {loading && selectedRoom === room.id ? "Joining..." : "Join"}
                   </Button>
                 </div>
               </div>

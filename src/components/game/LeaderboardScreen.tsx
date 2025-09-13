@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/Button";
 import { useAccount } from "wagmi";
-import { useContracts } from "~/hooks/useContracts";
+import { useContracts } from "~/hooks/useContractsSimple";
 import { PlayerScore, DailyChampion } from "~/lib/contracts";
 
 interface LeaderboardScreenProps {
